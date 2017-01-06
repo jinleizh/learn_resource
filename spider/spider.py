@@ -8,6 +8,7 @@ import time
 import json
 import pprint
 import socket
+import traceback
 
 def echo_success():
 	print "download success\n"
@@ -24,7 +25,7 @@ def init_req(req):
 	req.add_header("Accept-Encoding", "gzip, deflate")
 	req.add_header("Cache-Control", "max-age=0")
 	req.add_header('Content-Type', 'application/x-www-form-urlencoded')
-	req.add_header('Cookie', 'FSSBBIl1UgzbN7N80S=O3TNSgYcV9WFLzlXB0tsPPRdMVLwXQOdxDdsas9yirdjlHB.rngwjkvhmUmdABT8; ASP.NET_SessionId=yevnk4hl4sv0430gj25d12pf; Hm_lvt_3f1a54c5a86d62407544d433f6418ef5=1483454076,1483628071; Hm_lpvt_3f1a54c5a86d62407544d433f6418ef5=1483630318; _gsref_2116842793=http://wenshu.court.gov.cn/; _gscu_2116842793=83454076gg0viy14; _gscs_2116842793=t836303187qi7th55|pv:1; _gscbrs_2116842793=1; FSSBBIl1UgzbN7N80T=1.CHRm_n8brhw0o9um0aJuPyaHikYK3yHsCqg8VU5YwshyuwaR405wcmD9bPoWfayth8JrPXlbX8NsRb0RaXc_M2HWw72L1UXqtsuSRR.3.z3E9VxESDGF3EdTdOXCRuOO7jM4Ns_vxVn0R3e0jYbHz0wFVbM_pRxujJ3C2aqwsQaiWXAS0caTTjUzgrUAsycfNuthAdkGHhgZKNAx7sncyBD2BtR_RySd8IguxZmPfI.ic8UOEcPDgw09TU5kXYV9SiXAAqgIoyCYVKKxBb.OoOwlZWMhuYKK3lIfX55T5pN0XJIzT4CC6gE64LfMMkfBq')
+	req.add_header('Cookie', cookie)
 
 """
 保存二进制流到文件
@@ -86,7 +87,7 @@ def search(key_word):
 	req = urllib2.Request(url)
 	req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.155 Safari/537.36")
 	req.add_header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-	req.add_header('Cookie', 'FSSBBIl1UgzbN7N80S=O3TNSgYcV9WFLzlXB0tsPPRdMVLwXQOdxDdsas9yirdjlHB.rngwjkvhmUmdABT8; ASP.NET_SessionId=yevnk4hl4sv0430gj25d12pf; Hm_lvt_3f1a54c5a86d62407544d433f6418ef5=1483454076,1483628071; Hm_lpvt_3f1a54c5a86d62407544d433f6418ef5=1483630318; _gsref_2116842793=http://wenshu.court.gov.cn/; _gscu_2116842793=83454076gg0viy14; _gscs_2116842793=t836303187qi7th55|pv:1; _gscbrs_2116842793=1; FSSBBIl1UgzbN7N80T=1.CHRm_n8brhw0o9um0aJuPyaHikYK3yHsCqg8VU5YwshyuwaR405wcmD9bPoWfayth8JrPXlbX8NsRb0RaXc_M2HWw72L1UXqtsuSRR.3.z3E9VxESDGF3EdTdOXCRuOO7jM4Ns_vxVn0R3e0jYbHz0wFVbM_pRxujJ3C2aqwsQaiWXAS0caTTjUzgrUAsycfNuthAdkGHhgZKNAx7sncyBD2BtR_RySd8IguxZmPfI.ic8UOEcPDgw09TU5kXYV9SiXAAqgIoyCYVKKxBb.OoOwlZWMhuYKK3lIfX55T5pN0XJIzT4CC6gE64LfMMkfBq')
+	req.add_header('Cookie', cookie)
 	
 	response = urllib2.urlopen(req, timeout=30)
 	if debug:
