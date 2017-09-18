@@ -1,0 +1,25 @@
+- 获取验证码的url
+http://wenshu.court.gov.cn/ValiCode/CreateCode/?guid=需按规则随机构造
+
+- 构造guid
+def genGuid():
+    f1 = ''.join(random.sample(string.ascii_lowercase + string.octdigits, 8))
+    f2 = ''.join(random.sample(string.ascii_lowercase + string.octdigits, 4))
+    f3 = ''.join(random.sample(string.ascii_lowercase + string.octdigits, 8))
+    f4 = ''.join(random.sample(string.ascii_lowercase + string.octdigits, 12))
+    return '-'.join([f1, f2, f3, f4])
+    
+- 填充guid到获取验证码的url中, 请求验证码图片文件
+
+- 使用Tesseract识别验证码图片
+
+- 搜索文章的url
+http://wenshu.court.gov.cn/list/list/?sorttype=1&number=验证码&guid=构造的GUID&conditions=searchWord+%E5%BD%93%E4%BA%8B%E4%BA%BA+++%E5%BD%93%E4%BA%8B%E4%BA%BA:%E5%B0%8F%E6%B1%AA
+
+- 把验证码和guid填充到url中, 可以获得文件列表
+
+- 分页查询url http://wenshu.court.gov.cn/List/ListContent
+
+- 分页查询时post请求中需加入,刚才构造的guid和验证码
+number:xxxx
+guid:yyyyy
