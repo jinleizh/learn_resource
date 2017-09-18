@@ -23,3 +23,5 @@ http://wenshu.court.gov.cn/list/list/?sorttype=1&number=验证码&guid=构造的
 - 分页查询时post请求中需加入,刚才构造的guid和验证码
 number:xxxx
 guid:yyyyy
+
+- 负责下载的代码不需要修改
