@@ -9,6 +9,9 @@ import time
 import urllib
 import urllib2
 
+import pytesseract
+from PIL import Image
+
 
 def echo_success():
     print "download success\n"
@@ -159,9 +162,12 @@ def searchAndDownload(url, values):
 
     download(download_url, docIds, 1, 1)
 
+
 """
 生成guid
 """
+
+
 def genGuid():
     f1 = ''.join(random.sample(string.ascii_lowercase + string.octdigits, 8))
     f2 = ''.join(random.sample(string.ascii_lowercase + string.octdigits, 4))
@@ -173,6 +179,8 @@ def genGuid():
 """
 下载验证码图片
 """
+
+
 def downloadYZM(url):
     print "download yzm begin ..."
     guid = genGuid()
@@ -190,11 +198,49 @@ def downloadYZM(url):
     if debug:
         print response.headers
 
-    save_binary_to_file(response, "3.png")
+    # save_binary_to_file(response, "png/" + guid + ".png")
+    save_binary_to_file(response, guid + ".png")
     print "download yzm end ..."
 
-if __name__ == "__main__":
+"""
+二值化图片
+"""
+def get_bin_table(threshold=140):
+    table = []
+    for i in range(256):
+        if i < threshold:
+            table.append(0)
+        else:
+            table.append(1)
 
+    return table
+
+
+"""
+解析验证码
+"""
+def parseYZM(picName):
+    print picName
+    im = Image.open(picName)
+    threshold = 140
+    table = []
+    for i in range(256):
+        if i < threshold:
+            table.append(0)
+        else:
+            table.append(1)
+
+    im = im.convert('L')
+    out = im.point(table, '1')
+
+    print pytesseract.image_to_string(im)
+    f1 = open("tmp.png")
+    image2 = Image.open(f1)
+    image2.show()
+    code = pytesseract.image_to_string(image2)
+    print code
+
+if __name__ == "__main__":
     # 是否打印调试信息
     debug = True
 
@@ -258,4 +304,5 @@ if __name__ == "__main__":
         echo_fail()
     """
 
-    downloadYZM(yzm_url)
+    # downloadYZM(yzm_url)
+    parseYZM("3kga05ih-xol6-byomzr5i-qxotfiu4703n.png")
