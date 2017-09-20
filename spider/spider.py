@@ -237,7 +237,7 @@ def parseYZM(picName):
     f1 = open("tmp.png")
     image2 = Image.open(f1)
     image2.show()
-    code = pytesseract.image_to_string(image2)
+    code = pytesseract.image_to_string(image2, lang="eng", config="-psm 7")
     print code
 
 if __name__ == "__main__":
