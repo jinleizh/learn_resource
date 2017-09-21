@@ -4,6 +4,7 @@
 import json
 import random
 import re
+import socket
 import string
 import time
 import traceback
@@ -94,6 +95,14 @@ def download(url, doc, total_loop_time, total_retry_time):
         print '=' * 60 + "\n"
         print "download==>%s.\n" % filename
 
+"""
+睡眠时间
+"""
+def mySleep(retry_time):
+    if retry_time < 6:
+        time.sleep(2)
+    else:
+        time.sleep(3)
 
 """
 搜索框中搜索结果页
@@ -126,43 +135,67 @@ def search(key_word):
 """
 
 
-def searchAndDownload(url, values):
-    print "download begin\n"
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
-    req.add_header("User-Agent",
-                   "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.155 Safari/537.36")
-    req.add_header("Accept", "*/*")
-    req.add_header("Connection", "keep-alive")
-    req.add_header('Cookie', cookie)
-    response = urllib2.urlopen(req, timeout=download_timeout)
-    if debug:
-        print response.headers
+def pageSearchAndDownload(url, values, max_retry_time=10):
+    print "pageSearchAndDownload begin ..."
+    retry_time = 0
 
-    retStr = response.read()
-    result = json.loads(retStr)
-    result = eval(result)
+    while retry_time < max_retry_time:
+        mySleep(retry_time)
 
-    if debug:
-        print type(result)
-        print len(result)
+        # 获取验证码
+        guid, codeList = preOp(yzm_url)
+        print guid, codeList
 
-    first = True
-    docIds = ""
-    for i in xrange(len(result)):
-        if result[i].get("裁判要旨段原文") is not None:
-            if (first):
-                docIds = "|".join((result[i]["文书ID"], result[i]["案件名称"], result[i]["裁判日期"]))
-                first = False
-            else:
-                docIds += ","
-                docIds += "|".join((result[i]["文书ID"], result[i]["案件名称"], result[i]["裁判日期"]))
+        for code in codeList:
+            try:
+                values["guid"] = guid
+                values["number"] = code
+                print "pageSearch begin, url=" + url + " values=" + str(values)
+                data = urllib.urlencode(values)
+                req = urllib2.Request(url, data)
+                req.add_header("User-Agent",
+                               "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.155 Safari/537.36")
+                req.add_header("Accept", "*/*")
+                req.add_header("Connection", "keep-alive")
+                req.add_header('Cookie', cookie)
+                response = urllib2.urlopen(req, timeout=download_timeout)
 
-    if debug:
-        print docIds, '\n'
+                if debug:
+                    print response.headers
 
-    download(download_url, docIds, 1, 1)
+                retStr = response.read()
+                result = json.loads(retStr)
+                result = eval(result)
 
+                if debug:
+                    print type(result)
+                    print len(result)
+
+                first = True
+                docIds = ""
+                for i in xrange(len(result)):
+                    if result[i].get("裁判要旨段原文") is not None:
+                        if (first):
+                            docIds = "|".join((result[i]["文书ID"], result[i]["案件名称"], result[i]["裁判日期"]))
+                            first = False
+                        else:
+                            docIds += ","
+                            docIds += "|".join((result[i]["文书ID"], result[i]["案件名称"], result[i]["裁判日期"]))
+
+                if debug:
+                    print docIds, '\n'
+
+                download(download_url, docIds, 1, 1)
+
+                break
+            except:
+                print "retry page search and download"
+                traceback.print_exc()
+                continue
+
+        retry_time = retry_time + 1
+
+    print "pageSearchAndDownload end ..."
 
 """
 生成guid
@@ -266,10 +299,7 @@ def preOp(yzm_url, max_retry_time=10):
         guid = ""
         retry_time = 0
         while not championCode and retry_time < max_retry_time:
-            if (retry_time < 6):
-                time.sleep(0.5)
-            else:
-                time.sleep(1)
+            mySleep(retry_time)
 
             print "retry time %d get yzm begin ..." % (retry_time)
             codeMap = {}
@@ -333,6 +363,10 @@ def adjust(codeList, code):
             codeList.append(code.replace("Q", "9"))
         if c == '7':
             codeList.append(code.replace("7", "j"))
+        if c == 'z':
+            codeList.append(code.replace("z", "2"))
+        if c == '2':
+            codeList.append(code.replace("2", "z"))
 
 """
  校验code合法
@@ -369,7 +403,7 @@ if __name__ == "__main__":
     download_url = "http://wenshu.court.gov.cn/CreateContentJS/CreateListDocZip.aspx?action=1"
 
     # 主页-全文搜索框url
-    home_url = "http://wenshu.court.gov.cn/list/list/?sorttype=1&conditions=searchWord+QWJS+++"
+    home_url = "http://wenshu.court.gov.cn/list/list/?sorttype=1&number=%s&guid=%s&conditions=searchWord+QWJS+++"
 
     # 分页搜索url
     page_url = "http://wenshu.court.gov.cn/List/ListContent?MmEwMD=1cQYd7ALgH.p4wz5Y78j.FEOKb9RudnON_QF865J3Z6xzARoKapX30LIGJWgf2hjIOfl.LE0PHllH_uZ1aF09sSZW0t_BrFqaMNj81QZfg.PbQ1LFG7HfPiF8A0DBjGIhpM91lFOMnJQJAmC1xRSsyVJSQIkzi639fv7TZvtM7cDCvU.WlJB7CBEcl1683S4E.JvSGEFqKY42vY.UhoUbAsOa9fibHIBnmpldRGP2NL1_yCj6WBxNV9zcQ_pEQt9ExCXNCzItugvIJBkwMX3PlNs85rBTLNipTlkUasObyhzDKptjyX985sCNFdn9VLL4KGT0gWkMDIugztjtjpjb8MaJonKnVRzLMY4aqcPlRiV7gO3Aj2Jum5TSPcIqeOsnS6"
@@ -387,15 +421,14 @@ if __name__ == "__main__":
         'Index': 1,
         'Page': 5,
         'Order': '法院层级',
-        'Direction': 'asc'
+        'Direction': 'asc',
     }
 
-    """
     retry_time = 0
     success = False
     while retry_time < max_retry_time:
         try:
-            searchAndDownload(page_url, values)
+            pageSearchAndDownload(page_url, values, 3)
             success = True
         except socket.timeout, e:
             retry_time += 1
@@ -413,6 +446,3 @@ if __name__ == "__main__":
         echo_success()
     else:
         echo_fail()
-    """
-    guid, codeList = preOp(yzm_url)
-    print guid, codeList
