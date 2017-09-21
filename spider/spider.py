@@ -6,6 +6,7 @@ import random
 import re
 import string
 import time
+import traceback
 import urllib
 import urllib2
 
@@ -255,12 +256,14 @@ def parseYZM(guid, psm, factor, enhance=0):
 """
 非训练方式的解决方案
 评估识别效果 + 出错重试
+默认重试10次, 从测试数据看，10次中能正确识别一次的概率比较高
 """
 
 
-def preOp(yzm_url, max_retry_time):
+def preOp(yzm_url, max_retry_time=10):
     try:
         championCode = ""
+        guid = ""
         retry_time = 0
         while not championCode and retry_time < max_retry_time:
             if (retry_time < 6):
@@ -285,16 +288,16 @@ def preOp(yzm_url, max_retry_time):
                 if not ret:
                     continue
 
-                print str(mode) + "===" + code + "====after parse code=" + new_code
+                print str(mode) + "===" + code + "====after parse new_code=" + new_code
                 if 0 == show_cnt:
                     if debug:
                         newIm.show()
                     show_cnt = 1
 
-                if codeMap or codeMap[new_code]:
-                    codeMap[new_code] = 1
+                if codeMap and new_code in codeMap:
+                    codeMap[new_code] = codeMap[new_code] + 1
                 else:
-                    codeMap[new_code] =  codeMap[new_code] + 1
+                    codeMap.setdefault(new_code, 1)
 
             maxCnt = 0
             for key in codeMap:
@@ -306,26 +309,45 @@ def preOp(yzm_url, max_retry_time):
 
             retry_time = retry_time + 1
 
-        return championCode
-    except Exception, e:
-        print e.message
+            print codeMap
 
+        codeList = []
+        adjust(codeList, championCode)
+        return guid, codeList
+    except :
+        traceback.print_exc()
+
+"""
+矫正验证码
+5 - s
+s - 5
+"""
+def adjust(codeList, code):
+    codeList.append(code)
+    for c in code:
+        if c == '5':
+            codeList.append(code.replace("5", "s"))
+        if c == 's':
+            codeList.append(code.replace("s", "5"))
+        if c == 'Q':
+            codeList.append(code.replace("Q", "9"))
+        if c == '7':
+            codeList.append(code.replace("7", "j"))
 
 """
  校验code合法
 """
 def isValid(code):
-    charSet = code[::-1]
-    print "charSet=" + charSet
+    print code
     len = 0
     retCharSet = []
-    for c in charSet:
+    for c in code:
         if (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <='Z'):
             len = len + 1
             retCharSet.append(c)
 
     if 4 == len:
-        return True, ''.join(retCharSet)[::-1]
+        return True, ''.join(retCharSet)
 
     return False, ""
 
@@ -392,4 +414,5 @@ if __name__ == "__main__":
     else:
         echo_fail()
     """
-    preOp(yzm_url, 3)
+    guid, codeList = preOp(yzm_url)
+    print guid, codeList
