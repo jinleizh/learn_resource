@@ -203,9 +203,12 @@ def downloadYZM(url):
     print "download yzm end ..."
     return guid
 
+
 """
 二值化图片
 """
+
+
 def get_bin_table(threshold=140):
     table = []
     for i in range(256):
@@ -220,6 +223,8 @@ def get_bin_table(threshold=140):
 """
 解析验证码
 """
+
+
 def parseYZM(guid, psm, factor, enhance=0):
     picName = guid + ".png"
     im = Image.open(picName)
@@ -245,6 +250,84 @@ def parseYZM(guid, psm, factor, enhance=0):
 
     code = pytesseract.image_to_string(im, lang="eng", config="-psm " + psm)
     return code, im
+
+
+"""
+非训练方式的解决方案
+评估识别效果 + 出错重试
+"""
+
+
+def preOp(yzm_url, max_retry_time):
+    try:
+        championCode = ""
+        retry_time = 0
+        while not championCode and retry_time < max_retry_time:
+            if (retry_time < 6):
+                time.sleep(0.5)
+            else:
+                time.sleep(1)
+
+            print "retry time %d get yzm begin ..." % (retry_time)
+            codeMap = {}
+            guid = downloadYZM(yzm_url)
+            print "guid=" + guid
+            im = Image.open(guid + ".png")
+            if debug:
+                im.show()
+            show_cnt = 0
+            for mode in range(14):
+                if 0 == mode or 2 == mode:
+                    continue
+
+                code, newIm = parseYZM(guid, str(mode), 140, 0)
+                ret, new_code = isValid(code)
+                if not ret:
+                    continue
+
+                print str(mode) + "===" + code + "====after parse code=" + new_code
+                if 0 == show_cnt:
+                    if debug:
+                        newIm.show()
+                    show_cnt = 1
+
+                if codeMap or codeMap[new_code]:
+                    codeMap[new_code] = 1
+                else:
+                    codeMap[new_code] =  codeMap[new_code] + 1
+
+            maxCnt = 0
+            for key in codeMap:
+                if maxCnt < codeMap[key]:
+                    maxCnt = codeMap[key]
+                    championCode = key
+
+            print "retry time %d get yzm end ..." % (retry_time)
+
+            retry_time = retry_time + 1
+
+        return championCode
+    except Exception, e:
+        print e.message
+
+
+"""
+ 校验code合法
+"""
+def isValid(code):
+    charSet = code[::-1]
+    print "charSet=" + charSet
+    len = 0
+    retCharSet = []
+    for c in charSet:
+        if (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <='Z'):
+            len = len + 1
+            retCharSet.append(c)
+
+    if 4 == len:
+        return True, ''.join(retCharSet)[::-1]
+
+    return False, ""
 
 if __name__ == "__main__":
     # 是否打印调试信息
@@ -309,19 +392,4 @@ if __name__ == "__main__":
     else:
         echo_fail()
     """
-
-    guid = downloadYZM(yzm_url)
-    # guid = "ptdizwnu-ec1k-tdr2fn7u-a246rmutzis7"
-    print "guid=" + guid
-    im = Image.open(guid + ".png")
-    im.show()
-    show_cnt = 0
-    for mode in range(14):
-        if(0 == mode or 2 == mode):
-            continue
-
-        code, newIm = parseYZM(guid, str(mode), 140, 0)
-        print str(mode) + "===" + code
-        if 0 == show_cnt:
-            newIm.show()
-            show_cnt = 1
+    preOp(yzm_url, 3)
