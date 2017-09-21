@@ -10,7 +10,7 @@ import urllib
 import urllib2
 
 import pytesseract
-from PIL import Image
+from PIL import Image, ImageEnhance
 
 
 def echo_success():
@@ -194,13 +194,14 @@ def downloadYZM(url):
     req.add_header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/Png, */*;q=0.8")
     req.add_header('Cookie', cookie)
 
-    response = urllib2.urlopen(req, timeout=30)
+    response = urllib2.urlopen(req, timeout=5)
     if debug:
         print response.headers
 
     # save_binary_to_file(response, "png/" + guid + ".png")
     save_binary_to_file(response, guid + ".png")
     print "download yzm end ..."
+    return guid
 
 """
 二值化图片
@@ -219,26 +220,31 @@ def get_bin_table(threshold=140):
 """
 解析验证码
 """
-def parseYZM(picName):
-    print picName
+def parseYZM(guid, psm, factor, enhance=0):
+    picName = guid + ".png"
     im = Image.open(picName)
-    threshold = 140
+    threshold = factor
     table = []
     for i in range(256):
         if i < threshold:
             table.append(0)
         else:
             table.append(1)
-
     im = im.convert('L')
-    out = im.point(table, '1')
+    im = im.point(table, '1')
 
-    print pytesseract.image_to_string(im)
-    f1 = open("tmp.png")
-    image2 = Image.open(f1)
-    image2.show()
-    code = pytesseract.image_to_string(image2, lang="eng", config="-psm 7")
-    print code
+    if enhance == 1:
+        try:
+            # 先变为黑白
+            im = ImageEnhance.Color(im).enhance(1.0)
+            im = ImageEnhance.Brightness(im).enhance(1.0)
+            im = ImageEnhance.Contrast(im).enhance(2.0)
+            im = ImageEnhance.Sharpness(im).enhance(0.0)
+        except:
+            pass
+
+    code = pytesseract.image_to_string(im, lang="eng", config="-psm " + psm)
+    return code, im
 
 if __name__ == "__main__":
     # 是否打印调试信息
@@ -304,5 +310,18 @@ if __name__ == "__main__":
         echo_fail()
     """
 
-    # downloadYZM(yzm_url)
-    parseYZM("3kga05ih-xol6-byomzr5i-qxotfiu4703n.png")
+    guid = downloadYZM(yzm_url)
+    # guid = "ptdizwnu-ec1k-tdr2fn7u-a246rmutzis7"
+    print "guid=" + guid
+    im = Image.open(guid + ".png")
+    im.show()
+    show_cnt = 0
+    for mode in range(14):
+        if(0 == mode or 2 == mode):
+            continue
+
+        code, newIm = parseYZM(guid, str(mode), 140, 0)
+        print str(mode) + "===" + code
+        if 0 == show_cnt:
+            newIm.show()
+            show_cnt = 1
