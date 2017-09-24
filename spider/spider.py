@@ -1,7 +1,6 @@
 #!/bin/env python
 # coding=utf-8
 
-import json
 import random
 import re
 import socket
@@ -100,9 +99,9 @@ def download(url, doc, total_loop_time, total_retry_time):
 """
 def mySleep(retry_time):
     if retry_time < 6:
-        time.sleep(2)
+        time.sleep(0.5)
     else:
-        time.sleep(3)
+        time.sleep(1)
 
 """
 搜索框中搜索结果页
@@ -135,7 +134,7 @@ def search(key_word):
 """
 
 
-def pageSearchAndDownload(url, values, max_retry_time=10):
+def pageSearchAndDownload(url, code_url, values, max_retry_time = 1):
     print "pageSearchAndDownload begin ..."
     retry_time = 0
 
@@ -143,37 +142,54 @@ def pageSearchAndDownload(url, values, max_retry_time=10):
         mySleep(retry_time)
 
         # 获取验证码
-        guid, codeList = preOp(yzm_url)
-        print guid, codeList
+        # guid, codeList = preOp(yzm_url)
+        #print guid, codeList
+
+        codeList = []
+        guid, code = getCode(code_url)
+        codeList.append(code)
 
         for code in codeList:
             try:
                 values["guid"] = guid
                 values["number"] = code
+                values["vl5x"] = "60bfa5f1c3b695c301f2f065"
+
                 print "pageSearch begin, url=" + url + " values=" + str(values)
                 data = urllib.urlencode(values)
                 req = urllib2.Request(url, data)
                 req.add_header("User-Agent",
                                "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.155 Safari/537.36")
                 req.add_header("Accept", "*/*")
+                req.add_header("Accept-Encoding", "gzip, deflate")
+                req.add_header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
                 req.add_header("Connection", "keep-alive")
+                req.add_header("X-Requested-With", "XMLHttpRequest")
                 req.add_header('Cookie', cookie)
-                response = urllib2.urlopen(req, timeout=download_timeout)
+                response = urllib2.urlopen(req, timeout=30)
+
+                print "response=" + str(response)
 
                 if debug:
                     print response.headers
 
+                """
                 retStr = response.read()
+                print "xxxxxx", retStr
+
                 result = json.loads(retStr)
                 result = eval(result)
 
                 if debug:
+                    print result + "xxxxxx"
                     print type(result)
                     print len(result)
 
                 first = True
                 docIds = ""
                 for i in xrange(len(result)):
+
+                    print "result[i]=" + result[i]
                     if result[i].get("裁判要旨段原文") is not None:
                         if (first):
                             docIds = "|".join((result[i]["文书ID"], result[i]["案件名称"], result[i]["裁判日期"]))
@@ -188,6 +204,7 @@ def pageSearchAndDownload(url, values, max_retry_time=10):
                 download(download_url, docIds, 1, 1)
 
                 break
+            """
             except:
                 print "retry page search and download"
                 traceback.print_exc()
@@ -237,6 +254,38 @@ def downloadYZM(url):
     print "download yzm end ..."
     return guid
 
+"""
+下载code
+"""
+def getCode(url, max_retry_time = 1):
+    print "getCode begin ..."
+    retry_time = 0
+    while retry_time < max_retry_time:
+        try:
+            guid = genGuid()
+            params = {
+                'guid': guid,
+            }
+
+            if debug:
+                print url, guid
+
+            data = urllib.urlencode(params)
+            req = urllib2.Request(url, data)
+            init_req(req)
+            response = urllib2.urlopen(req, timeout=10)
+
+            if debug:
+                print response.headers
+
+            code = response.read()
+            print "code=" + code + "   guid=" + guid
+            return guid, code
+        except:
+            retry_time += 1
+
+    print "getCode end ..."
+    return "", []
 
 """
 二值化图片
@@ -347,6 +396,7 @@ def preOp(yzm_url, max_retry_time=10):
     except :
         traceback.print_exc()
 
+
 """
 矫正验证码
 5 - s
@@ -397,19 +447,23 @@ if __name__ == "__main__":
 
     # Cookie 网站cookie只在一段时间内有效，当cookie失效时，只需要手动打开浏览器，访问下网站，通过chrome浏览器查看到cookie值，将cookie
     # 拷贝到此处即可继续访问网站
-    cookie = 'FSSBBIl1UgzbN7N80S=O3TNSgYcV9WFLzlXB0tsPPRdMVLwXQOdxDdsas9yirdjlHB.rngwjkvhmUmdABT8; ASP.NET_SessionId=yevnk4hl4sv0430gj25d12pf; Hm_lvt_3f1a54c5a86d62407544d433f6418ef5=1483454076,1483628071; Hm_lpvt_3f1a54c5a86d62407544d433f6418ef5=1483630318; _gsref_2116842793=http://wenshu.court.gov.cn/; _gscu_2116842793=83454076gg0viy14; _gscs_2116842793=t836303187qi7th55|pv:1; _gscbrs_2116842793=1; FSSBBIl1UgzbN7N80T=1.CHRm_n8brhw0o9um0aJuPyaHikYK3yHsCqg8VU5YwshyuwaR405wcmD9bPoWfayth8JrPXlbX8NsRb0RaXc_M2HWw72L1UXqtsuSRR.3.z3E9VxESDGF3EdTdOXCRuOO7jM4Ns_vxVn0R3e0jYbHz0wFVbM_pRxujJ3C2aqwsQaiWXAS0caTTjUzgrUAsycfNuthAdkGHhgZKNAx7sncyBD2BtR_RySd8IguxZmPfI.ic8UOEcPDgw09TU5kXYV9SiXAAqgIoyCYVKKxBb.OoOwlZWMhuYKK3lIfX55T5pN0XJIzT4CC6gE64LfMMkfBq'
+    cookie = "vjkl5=907756A1FFBAAE26016B18C99DAAEC380A689E65; Hm_lvt_3f1a54c5a86d62407544d433f6418ef5=1506168382; Hm_lpvt_3f1a54c5a86d62407544d433f6418ef5=1506169773; _gscu_2116842793=0616838232jqmw11; _gscs_2116842793=06168382nly59811|pv:10; _gscbrs_2116842793=1"
 
     # 下载url
     download_url = "http://wenshu.court.gov.cn/CreateContentJS/CreateListDocZip.aspx?action=1"
 
     # 主页-全文搜索框url
-    home_url = "http://wenshu.court.gov.cn/list/list/?sorttype=1&number=%s&guid=%s&conditions=searchWord+QWJS+++"
+    # home_url = "http://wenshu.court.gov.cn/list/list/?sorttype=1&number=%s&guid=%s&conditions=searchWord+QWJS+++"
+    home_url = "http://wenshu.court.gov.cn/list/list/?sorttype=1&conditions=searchWord+QWJS+++"
 
     # 分页搜索url
-    page_url = "http://wenshu.court.gov.cn/List/ListContent?MmEwMD=1cQYd7ALgH.p4wz5Y78j.FEOKb9RudnON_QF865J3Z6xzARoKapX30LIGJWgf2hjIOfl.LE0PHllH_uZ1aF09sSZW0t_BrFqaMNj81QZfg.PbQ1LFG7HfPiF8A0DBjGIhpM91lFOMnJQJAmC1xRSsyVJSQIkzi639fv7TZvtM7cDCvU.WlJB7CBEcl1683S4E.JvSGEFqKY42vY.UhoUbAsOa9fibHIBnmpldRGP2NL1_yCj6WBxNV9zcQ_pEQt9ExCXNCzItugvIJBkwMX3PlNs85rBTLNipTlkUasObyhzDKptjyX985sCNFdn9VLL4KGT0gWkMDIugztjtjpjb8MaJonKnVRzLMY4aqcPlRiV7gO3Aj2Jum5TSPcIqeOsnS6"
+    page_url = "http://wenshu.court.gov.cn/List/ListContent"
 
     # 验证码url
     yzm_url = "http://wenshu.court.gov.cn/ValiCode/CreateCode/?guid="
+
+    # code url
+    code_url = "http://wenshu.court.gov.cn/ValiCode/GetCode"
 
     # Param:搜索的关键字
     # Index:第几页
@@ -428,7 +482,7 @@ if __name__ == "__main__":
     success = False
     while retry_time < max_retry_time:
         try:
-            pageSearchAndDownload(page_url, values, 3)
+            pageSearchAndDownload(page_url, code_url, values, 1)
             success = True
         except socket.timeout, e:
             retry_time += 1
@@ -442,7 +496,10 @@ if __name__ == "__main__":
             echo_success()
             exit()
 
+
     if success:
         echo_success()
     else:
         echo_fail()
+
+    # getCode(code_url)
