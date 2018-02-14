@@ -1,0 +1,13 @@
+mysql语句执行顺序
+1）from子句
+2）inner join子句
+3）根据on条件过滤
+4）outer join子句，例如left join，right join，full join用于补充外部行，例如left join，表示以left表作为保留表，
+把left表中所有的内容取出来，如果没有右边表的内容，则使用null来代替右半部分
+5）where条件过滤，由于此时还未做select，以及并没有做分组统计，所以在where子句中不能使用列的别名，以及用于分组的聚合函数。
+6）group by 对数据进行分组
+7）having 和group by配合使用， 此时可以使用别名了
+8）select子句，选出数据
+9）distinct 去重复，内存表或磁盘
+10）order by 排序结果
+11）limit n,m 从排序结果中获取从指定位置开始的某一段数据结果
