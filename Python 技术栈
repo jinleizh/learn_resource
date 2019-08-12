@@ -1,0 +1,6 @@
+单元测试框架
+- Nose 代码覆盖率
+- pygenie 静态分析工具
+- pymetrics 静态分析工具
+- pylint 静态分析工具
+
