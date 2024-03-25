@@ -1,9 +1,10 @@
+Python Configuration
 Step 1. Add python interpreter using docker-compose yaml file
 Step 2. Specify start script
 Step 3. Set environment variable "PYTHONUNBUFFERED=1"
 Step 4. Set path mapping
 
-Unit Test Configuration
+Python Tests Configuration
 Step 1. Specify target module name
 Step 2. Set additional arguments "--override-ini=addopts="" -vv -s --verbose"
 Step 3. Set environment variable "FLASK_DEBUG=1"
