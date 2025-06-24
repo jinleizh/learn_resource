@@ -1,0 +1,20 @@
+Go Kit - microservice framework
+Gin - web framework 
+Gorilla Toolkit - 
+
+Cobra - command line tool
+Go Standard Library - 
+
+
+docker
+k8s
+terraform
+
+Resources
+- go.dev
+
+github.com/golang/go/wiki/#the-go-community
+
+debug Go code 
+- Delve
+
